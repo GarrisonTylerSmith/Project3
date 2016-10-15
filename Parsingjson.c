@@ -48,6 +48,11 @@ typedef struct{
     }light;
   };
 }Object;
+typedef struct {
+  float vect_point[3];
+  int  object_id;
+
+}Intersection;
 typedef struct{
   int num_objects;
   Object objects[128];

@@ -114,44 +114,54 @@ float ray_sphere_intersection(float* c, float r, float* r0, float* Rd){
 
 
 }
-// float* send_ray(float* color, Scene scene, float* r0, float rd){
-// 	int k; 
-// 	Object closest;
+void send_ray(Intersection* intersection, Scene scene, float* r0, float* rd){
+	int k; 
+	float best_t = INFINITY;
+	float Ro_new[3];
+	float Rd_new[3];
 
-
-
-// 			for(k = 0; k < scene.num_objects; k ++){
-// 				float t = -1;
+			for(k = 0; k < scene.num_objects; k ++){
+				float t = -1;
 		
-// 				Object o = scene.objects[k];
+				Object o = scene.objects[k];
 				
-// 				if(o.kind == T_SPHERE){
-// 					float c[3];
-// 					c[0] = o.a;
-// 					//printf("%lf\n", c[0]);
-// 					c[1] = o.b;
-// 					//printf("%lf\n", c[1]);
-// 					c[2] = o.c;
-// 					//printf("%s\n", c[2]);
-// 					t = ray_sphere_intersection(c, o.d, r0, rd);
-// 				}else if(o.kind == T_PLANE){
-// 					t = ray_plane_intersection(o.a,o.b,o.c,o.d,r0,rd);
-// 				}
+				if(o.kind == T_SPHERE){
+					float c[3];
+					c[0] = o.a;
+					//printf("%lf\n", c[0]);
+					c[1] = o.b;
+					//printf("%lf\n", c[1]);
+					c[2] = o.c;
+					//printf("%s\n", c[2]);
+					t = ray_sphere_intersection(c, o.d, r0, rd);
+				}else if(o.kind == T_PLANE){
+					t = ray_plane_intersection(o.a,o.b,o.c,o.d,r0,rd);
+				}
 				
-// 				if(t > 0 && t < best_t){
-// 					best_t = t;
-// 					closest = o;
-// 					//printf("setting object to %d %d\n", o.kind, closest.kind);
-// 				}
-// 			}
-// 			double* color = malloc(sizeof(double)*3);
-// 			double* lights;
-// 			double Ro_new;
-// 			double Rd_new;
+				if(t > 0 && t < best_t){
+					best_t = t;
+					intersection->object_id =k;
+					//printf("setting object to %d %d\n", o.kind, closest.kind);
+				}
+			}
 
-// 			// for(int l = 0; lights[l] != NULL; l++){
 
-// 			// }
+			vector_scale(rd,best_t, Ro_new);
+			vector_add(Ro_new,r0,Ro_new);
+
+
+			intersection->vect_point[0] = Ro_new[0];
+			intersection->vect_point[1] = Ro_new[1];
+			intersection->vect_point[2] = Ro_new[2];
+
+			// double* color = malloc(sizeof(double)*3);
+			// double* lights;
+			// double Ro_new;
+			// double Rd_new;
+
+			// for(int l = 0; lights[l] != NULL; l++){
+
+			// }
 // 			// Iterate through the lights
 // 				for(int index = 0; index < num_objects; index++) {
 // 					if(strcmp(objects[index].type, "light") == 0) {
@@ -171,7 +181,18 @@ float ray_sphere_intersection(float* c, float r, float* r0, float* Rd){
 // 						if(closest_shadow_obj == null) {
 // 						}
 // 		return -1;
-// }	
+ }
+void get_color(float* color, Scene scene , float* r0, float* rd){
+	Intersection intersect;
+	send_ray(&intersect, scene, r0, rd);
+	if(intersect.object_id == -1){
+		return;
+	}
+	Object c = scene.objects[intersect.object_id];
+	vector_scale(color, 1, c.color);
+
+
+}	
 void raycast(Scene scene, char* outfile, PPMImage* image){
 	//PPMImage *image = malloc(sizeof(PPMImage));
 	image->data = malloc(sizeof(PPMPixel) * image->width * image->height);
@@ -212,55 +233,21 @@ void raycast(Scene scene, char* outfile, PPMImage* image){
 		for(j = 0; j < N; j ++){
 			rd[0] = c_x - w/2.0 + pixel_width * (j + 0.5);
 			
-			float best_t = INFINITY;
-			Object closest;
-
-			for(k = 0; k < scene.num_objects; k ++){
-				float t = -1;
-				Object o = scene.objects[k];
-				
-				if(o.kind == T_SPHERE){
-					float c[3];
-					c[0] = o.a;
-					//printf("%lf\n", c[0]);
-					c[1] = o.b;
-					//printf("%lf\n", c[1]);
-					c[2] = o.c;
-					//printf("%s\n", c[2]);
-					t = ray_sphere_intersection(c, o.d, r0, rd);
-				}else if(o.kind == T_PLANE){
-					t = ray_plane_intersection(o.a,o.b,o.c,o.d,r0,rd);
-				}
-				
-				if(t > 0 && t < best_t){
-					best_t = t;
-					closest = o;
-					//printf("setting object to %d %d\n", o.kind, closest.kind);
-				}
-			}
 			
 			// write to Pixel* data
 			
 //			PPMImage image = data[i * N +j];
-			PPMPixel pixel;
+			float color[3];
+
+			get_color(color, scene, r0, rd);
+			
 			//if(closest.kind != 0)
 			//printf("kind: %d\n", closest.kind);
-			if(best_t < INFINITY && closest.kind > 0){
-				// makes the colors for the obejcts 
-				pixel.red = (char) (closest.color[0] * 255);
-				pixel.green = (char) (closest.color[1] * 255);
-				pixel.blue = (char) (closest.color[2] * 255);
-				//printf("Found intersection %lf %lf %lf\n", closest.color[0], closest.color[1], closest.color[2]);
-			}else{
-				// creates shadow effect
-				pixel.red = (char) (255* scene.background_color[0]);
-				pixel.green = (char) (255* scene.background_color[1]);
-				pixel.blue = (char) (255* scene.background_color[2]);
-			}
+		
 
-			image->data[i * N + j].red = pixel.red;
-			image->data[i * N + j].blue = pixel.blue;
-			image->data[i * N + j].green = pixel.green;
+			image->data[i * N + j].red = color[0];
+			image->data[i * N + j].blue = color[1];
+			image->data[i * N + j].green = color[2];
 			//printf("pixel %d\n", i*N+j);
 		}
 		

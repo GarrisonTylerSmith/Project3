@@ -10,7 +10,7 @@
  * @returns
  * @description
  */
-static inline void vector_add(double *vector_a, double *vector_b, double *vector_c) {
+static inline void vector_add(float *vector_a, float *vector_b, float *vector_c) {
   vector_c[0] = vector_a[0] + vector_b[0];
   vector_c[1] = vector_a[1] + vector_b[1];
   vector_c[2] = vector_a[2] + vector_b[2];
@@ -26,7 +26,7 @@ static inline void vector_add(double *vector_a, double *vector_b, double *vector
  * @returns
  * @description
  */
-static inline void vector_subtract(double *vector_a, double *vector_b, double *vector_c) {
+static inline void vector_subtract(float *vector_a, float *vector_b, float *vector_c) {
   vector_c[0] = vector_a[0] - vector_b[0];
   vector_c[1] = vector_a[1] - vector_b[1];
   vector_c[2] = vector_a[2] - vector_b[2];
@@ -42,7 +42,7 @@ static inline void vector_subtract(double *vector_a, double *vector_b, double *v
  * @returns
  * @description
  */
-static inline void vector_scale(double *vector_a, double scalar, double *vector_c) {
+static inline void vector_scale(float *vector_a, float scalar, float *vector_c) {
   vector_c[0] = scalar * vector_a[0];
   vector_c[1] = scalar * vector_a[1];
   vector_c[2] = scalar * vector_a[2];
@@ -58,7 +58,7 @@ static inline void vector_scale(double *vector_a, double scalar, double *vector_
  * @returns
  * @description
  */
-static inline double vector_dot_product(double *vector_a, double *vector_b) {
+static inline float vector_dot_product(float *vector_a, float *vector_b) {
   return vector_a[0]*vector_b[0] + vector_a[1]*vector_b[1] + vector_a[2]*vector_b[2];
 }
 
@@ -72,7 +72,7 @@ static inline double vector_dot_product(double *vector_a, double *vector_b) {
  * @returns
  * @description
  */
-static inline void vector_cross_product(double *vector_a, double *vector_b, double *vector_c) {
+static inline void vector_cross_product(float *vector_a, float *vector_b, float *vector_c) {
   vector_c[0] = vector_a[1] * vector_b[2] - vector_a[2] * vector_b[1];
   vector_c[1] = vector_a[2] * vector_b[0] - vector_a[0] * vector_b[2];
   vector_c[2] = vector_a[0] * vector_b[1] - vector_a[1] * vector_b[0];
