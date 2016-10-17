@@ -61,6 +61,8 @@ typedef struct{
   float camera_position[3];
   float camera_facing[3];
   float background_color[3];
+  float ambient_color;
+  float num_lights;
 }Scene;
 
 // next_c() wraps the getc() function and provides error checking and line

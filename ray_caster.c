@@ -184,6 +184,7 @@ void send_ray(Intersection* intersection, Scene scene, float* r0, float* rd){
  }
 void get_color(float* color, Scene scene , float* r0, float* rd){
 	Intersection intersect;
+	intersect.object_id = -1;
 	send_ray(&intersect, scene, r0, rd);
 	if(intersect.object_id == -1){
 		return;
