@@ -16,6 +16,11 @@ static inline void vector_add(float *vector_a, float *vector_b, float *vector_c)
   vector_c[2] = vector_a[2] + vector_b[2];
 }
 
+
+static inline float sqr(float v){
+  return v*v;
+}
+
 /**
 * length 
 * @ param
@@ -23,13 +28,10 @@ static inline void vector_add(float *vector_a, float *vector_b, float *vector_c)
 * @ description
 */
 
-static inline length(float* a){
-  return sqrt(sqr(a[0]) + sqr(a[1] + sqr(a[2]));
+static inline float length(float* a){
+  float x =  sqrt(sqr(a[0]) + sqr(a[1]) + sqr(a[2]));
+  return x;
 
-}
-
-static inline float sqr(float v){
-  return v*v;
 }
 
 

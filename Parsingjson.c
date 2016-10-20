@@ -12,6 +12,9 @@ int line = 1;
 typedef struct{
   int kind; // 0 = cylinder, 1 = sphere, 2 = plane
   float color[3];
+  float position[3];
+  float direction[3];
+  float specular_color[3];
   float a;
   float b;
   float c;
@@ -25,8 +28,7 @@ typedef struct{
     struct{
       float center[3];
       float radius;
-      float diffuse_color;
-      float specular_color;
+      float diffuse_color[3];
     }sphere;
     struct{
       float position;
@@ -45,9 +47,20 @@ typedef struct{
       float radial_a1;
       float radial_a2;
       float angular_a0;
+      float theta;
     }light;
   };
 }Object;
+
+typedef struct {
+      float position;
+      float direction;
+      float color;
+      float radial_a0;
+      float radial_a1;
+      float radial_a2;
+      float angular_a0;
+}Light;
 typedef struct {
   float vect_point[3];
   int  object_id;
@@ -61,8 +74,9 @@ typedef struct{
   float camera_position[3];
   float camera_facing[3];
   float background_color[3];
-  float ambient_color;
+  float ambient_color[3];
   float num_lights;
+  Object lights[128];
 }Scene;
 
 // next_c() wraps the getc() function and provides error checking and line
@@ -229,6 +243,8 @@ Scene read_scene(char* json_name){
     float diffuse_color[3];
     int set_specular_color =0;
     float specular_color[3];
+    float set_theta = 0;
+    float theta = 0;
 
     Object new_object = scene.objects[scene.num_objects];
     
@@ -367,6 +383,13 @@ Scene read_scene(char* json_name){
             set_angular_a0 = 1;
           }
         }
+        else if(strcmp(key, "theta") == 0){
+          if(objtype == T_LIGHT){
+            float value = next_number(json);
+            theta = value;
+            set_theta = 1;
+          }
+        }
         else{
           fprintf(stderr, "Error: unknown property: %s on line %d\n", key, line);
           exit(1);
@@ -456,6 +479,10 @@ Scene read_scene(char* json_name){
       }
       if(angular_a0 < 0){
         fprintf(stderr, "light must have a non-negative angular_a0! Line %d\n", line);
+        exit(1);
+      }
+      if(theta < 0 && theta >= 180){
+        fprintf(stderr, "light must have a less than or equal to 180 but not a non-negative! Line %d\n", line);
         exit(1);
       }
       // get properties for a light

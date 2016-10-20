@@ -6,9 +6,9 @@
 #include "Parsingjson.c"
 #include "3dmath.h"
 
-static inline float sqr(float v){
-	return v*v;
-}
+#define SPEC_SHINE 20
+#define SPEC_K 1
+
 static inline void normalize(float* v){
 	float len = sqrt(sqr(v[0]) + sqr(v[1]) + sqr(v[2]));
 	v[0] /= len;
@@ -21,6 +21,25 @@ float dot(float v[], float u[], int n){
 		result += v[i]*u[i];
 	}
 	return result;
+}
+void vector_multiply(float v[], float u[], float n[]){
+	n[0] = v[0]*u[0];
+	n[1] = v[1]*u[1];
+	n[2] = v[2]*u[2];
+}
+
+
+double clamp(double number, double min, double max){
+	if(number > max) {
+		return max;
+		
+	} else if (number < min){
+		return min;
+		
+	} else {
+		return number;
+		
+	}
 }
 
 float cylinder_intersecion(float* r0, float* Rd, float* c, float r){
@@ -154,44 +173,107 @@ void send_ray(Intersection* intersection, Scene scene, float* r0, float* rd){
 			intersection->vect_point[1] = Ro_new[1];
 			intersection->vect_point[2] = Ro_new[2];
 
-			// double* color = malloc(sizeof(double)*3);
-			// double* lights;
-			// double Ro_new;
-			// double Rd_new;
-
-			// for(int l = 0; lights[l] != NULL; l++){
-
-			// }
-// 			// Iterate through the lights
-// 				for(int index = 0; index < num_objects; index++) {
-// 					if(strcmp(objects[index].type, "light") == 0) {
-// 						vector_scale(rd, best_t, Ro_new);
-// 						vector_add(Ro_new, r0, Ro_new);
-// 						vector_subtract(objects[index].properties.light.position, Ro_new, Rd_new);
-						
-// 						for(k = 0; k < num_objects; k++){
-// 							// Repeat intersection code test
-// 							// If best_t > distance to light, continue...
-// 							if(object[k] == closest_shadow_obj){
-// 								continue;
-// 							}
-							
-// 						}
-						
-// 						if(closest_shadow_obj == null) {
-// 						}
-// 		return -1;
  }
 void get_color(float* color, Scene scene , float* r0, float* rd){
 	Intersection intersect;
+	Object closest;
 	intersect.object_id = -1;
 	send_ray(&intersect, scene, r0, rd);
 	if(intersect.object_id == -1){
 		return;
 	}
-	Object c = scene.objects[intersect.object_id];
-	vector_scale(color, 1, c.color);
+	float lighting[3];
+	int k;
 
+	for(k = 0; k < scene.num_lights; k++){
+		Object light;
+		light = scene.lights[k];
+
+		float light_direction[3];
+		float direction_to_light[3];
+
+		float normal[3];
+
+		// distance to light
+
+		float dist[3];
+		vector_subtract(light.position, intersect.vect_point, dist);
+		float distance_to_light = length(dist);
+
+		vector_subtract(intersect.vect_point, light.position, light_direction);
+		normalize(light_direction);
+		vector_scale(light_direction, -1, direction_to_light);
+
+		// shadow test intersection
+
+		Intersection shadow; 
+		send_ray(&shadow, scene, intersect.vect_point, direction_to_light);
+
+		if(shadow.object_id != -1){
+
+			vector_subtract(shadow.vect_point, intersect.vect_point, dist);
+			float distance_to_object = length(dist);
+
+			if(distance_to_light > distance_to_object){
+				continue;
+			}
+
+
+		}
+
+		if(closest.kind == T_SPHERE){
+			vector_subtract(intersect.vect_point, closest.position, normal);
+			normalize(normal);
+		}else if(closest.kind == T_PLANE){
+			normal[0] = closest.a;
+			normal[1] = closest.b;
+			normal[2] = closest.c;
+		}
+
+		float incident_light_level = -dot(normal, light_direction, 3);
+		if(incident_light_level > 0){
+			float Incident[3];
+			Incident[0] = 0;
+			Incident[1] = 0;
+			Incident[2] = 0;
+
+				float attenuation = 0;
+
+				attenuation = pow(dot(light_direction, light.direction, 3), light.d) / (light.a * sqr(distance_to_light) + light.b * distance_to_light + light.c);
+
+				attenuation = clamp(attenuation, 0.0, 1.0);
+
+				float spec[3];
+
+
+				float r[3];
+				vector_scale(normal, dot(light_direction, normal, 3) * 2, r);
+				vector_subtract(light_direction, r, r);
+
+				float v[3];
+				vector_scale(rd, -1, v);
+
+				float spec_1 = powf(dot(r,v, 3), SPEC_SHINE) * SPEC_K;
+				vector_scale(light.color, spec_1, spec);
+				vector_multiply(closest.specular_color, spec, spec);
+
+				float diff[3];
+
+				vector_scale(closest.color, incident_light_level, diff);
+
+				vector_add(lighting, spec, lighting);
+
+				vector_add(lighting, diff, lighting);
+
+
+
+
+		}
+	}
+
+	Object c = scene.objects[intersect.object_id];
+
+	vector_scale(c.color, 1, color);
 
 }	
 void raycast(Scene scene, char* outfile, PPMImage* image){
@@ -242,13 +324,14 @@ void raycast(Scene scene, char* outfile, PPMImage* image){
 
 			get_color(color, scene, r0, rd);
 			
+			//printf("color %f %f %f\n", color[0], color[1], color[2]);
 			//if(closest.kind != 0)
 			//printf("kind: %d\n", closest.kind);
 		
 
-			image->data[i * N + j].red = color[0];
-			image->data[i * N + j].blue = color[1];
-			image->data[i * N + j].green = color[2];
+			image->data[i * N + j].red = color[0] * 255;
+			image->data[i * N + j].blue = color[1] * 255;
+			image->data[i * N + j].green = color[2] * 255;
 			//printf("pixel %d\n", i*N+j);
 		}
 		
