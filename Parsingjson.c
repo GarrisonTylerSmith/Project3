@@ -75,7 +75,7 @@ typedef struct{
   float camera_facing[3];
   float background_color[3];
   float ambient_color[3];
-  float num_lights;
+  int num_lights;
   Object lights[128];
 }Scene;
 
@@ -308,7 +308,7 @@ Scene read_scene(char* json_name){
             set_radius = 1;
           }
         }
-        else if(strcmp(key, "color") == 0){
+        else if(strcmp(key, "diffuse_color") == 0){
           float* v3 = next_vector(json);
           color[0] = v3[0];
           color[1] = v3[1];
@@ -353,6 +353,15 @@ Scene read_scene(char* json_name){
             specular_color[1] = v3[1];
             specular_color[2] = v3[2];
             set_specular_color = 1;
+          }
+        }
+        else if(strcmp(key, "color")==0){
+          if(objtype == T_LIGHT){
+            float* v3 = next_vector(json);
+            color[0] = v3[0];
+            color[1] = v3[1];
+            color[2] = v3[2];
+            set_color = 1;
           }
         }
         else if(strcmp(key, "radial-a0") == 0){
@@ -525,6 +534,11 @@ Scene read_scene(char* json_name){
       scene.objects[scene.num_objects] = new_object;
       scene.num_objects ++;
     } 
+    
+    if(objtype == T_LIGHT){
+      scene.lights[scene.num_lights] = new_object;
+      scene.num_lights ++;
+    }
     skip_ws(json);
     c = next_c(json);
     
