@@ -1,4 +1,4 @@
-all: Imagebuffer.c
+all: ray_caster.c
 	gcc ray_caster.c -o ray_caster
 
 clean:
